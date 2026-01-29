@@ -18,13 +18,13 @@
 <h2>📱 Mobile Tracker</h2>
 
 <!-- LOGIN -->
-<div id="login">
+<div id="loginBox">
   <input type="password" id="pass" placeholder="Enter Password">
-  <button onclick="login()">Login</button>
+  <button onclick="doLogin()">Login</button>
 </div>
 
 <!-- APP -->
-<div id="app" style="display:none">
+<div id="appBox" style="display:none">
 
 <h3>Add New Mobile</h3>
 
@@ -44,7 +44,7 @@
 
 <input id="name" placeholder="Mobile Name">
 <input type="date" id="date">
-<button onclick="add()">Add</button>
+<button onclick="addMobile()">Add</button>
 
 <table>
   <thead>
@@ -62,58 +62,61 @@
 </div>
 
 <script>
-const PASSWORD = "12345";   // change password here
+const PASSWORD = "1234"; // change password here
 let data = [];
 
-function login(){
-  if(pass.value === PASSWORD){
-    login.style.display="none";
-    app.style.display="block";
+function doLogin(){
+  if(document.getElementById("pass").value === PASSWORD){
+    document.getElementById("loginBox").style.display = "none";
+    document.getElementById("appBox").style.display = "block";
   } else {
     alert("Wrong Password");
   }
 }
 
-function add(){
-  if(!name.value || !date.value){
+function addMobile(){
+  let name = document.getElementById("name").value;
+  let date = document.getElementById("date").value;
+
+  if(name === "" || date === ""){
     alert("Name aur Date daalo");
     return;
   }
 
-  let d = new Date(date.value);
+  let d = new Date(date);
   let today = new Date();
   let days = Math.floor((today - d)/(1000*60*60*24));
-  let status = days>=365 ? "⚠️ 1 year old" : "✅ OK";
+  let status = days >= 365 ? "⚠️ 1 year old" : "✅ OK";
 
   data.push({
-    b: brand.value,
-    n: name.value,
+    brand: document.getElementById("brand").value,
+    name: name,
     days: days,
     status: status
   });
 
-  name.value="";
-  date.value="";
+  document.getElementById("name").value = "";
+  document.getElementById("date").value = "";
+
   render();
 }
 
 function render(){
-  list.innerHTML="";
+  let html = "";
   data.forEach((x,i)=>{
-    list.innerHTML += `
+    html += `
       <tr>
-        <td>${x.b}</td>
-        <td>${x.n}</td>
+        <td>${x.brand}</td>
+        <td>${x.name}</td>
         <td>${x.days}</td>
         <td class="${x.days>=365?'warn':'ok'}">${x.status}</td>
-        <td>
-          <button onclick="del(${i})">Delete</button>
-        </td>
+        <td><button onclick="deleteMobile(${i})">Delete</button></td>
       </tr>`;
   });
+  document.getElementById("list").innerHTML = html;
 }
 
-function del(i){
+function deleteMobile(i){
   if(confirm("Delete karna hai?")){
     data.splice(i,1);
     render();

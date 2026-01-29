@@ -5,12 +5,11 @@
   <style>
     body { font-family: Arial; background:#f2f6ff; padding:20px; }
     h2 { color:#333; }
-    button { padding:8px 12px; margin:5px; }
-    input, select { padding:6px; margin:5px; }
+    input, select, button { padding:6px; margin:5px; }
     table { border-collapse: collapse; width:100%; margin-top:15px; }
     th, td { border:1px solid #aaa; padding:8px; text-align:center; }
     .warn { color:red; font-weight:bold; }
-    .ok { color:green; }
+    .ok { color:green; font-weight:bold; }
   </style>
 </head>
 
@@ -20,15 +19,15 @@
 
 <!-- LOGIN -->
 <div id="login">
-  <h3>Login</h3>
   <input type="password" id="pass" placeholder="Enter Password">
   <button onclick="login()">Login</button>
 </div>
 
-<!-- MAIN APP -->
+<!-- APP -->
 <div id="app" style="display:none">
 
 <h3>Add New Mobile</h3>
+
 <select id="brand">
   <option>Samsung</option>
   <option>Apple</option>
@@ -54,6 +53,7 @@
       <th>Mobile</th>
       <th>Days</th>
       <th>Status</th>
+      <th>Action</th>
     </tr>
   </thead>
   <tbody id="list"></tbody>
@@ -66,40 +66,60 @@ const PASSWORD = "1234";   // change password here
 let data = [];
 
 function login(){
-  if(document.getElementById("pass").value === PASSWORD){
-    document.getElementById("login").style.display="none";
-    document.getElementById("app").style.display="block";
+  if(pass.value === PASSWORD){
+    login.style.display="none";
+    app.style.display="block";
   } else {
     alert("Wrong Password");
   }
 }
 
 function add(){
-  let b = brand.value;
-  let n = name.value;
+  if(!name.value || !date.value){
+    alert("Name aur Date daalo");
+    return;
+  }
+
   let d = new Date(date.value);
   let today = new Date();
   let days = Math.floor((today - d)/(1000*60*60*24));
-
   let status = days>=365 ? "⚠️ 1 year old" : "✅ OK";
 
-  data.push({b,n,days,status});
+  data.push({
+    b: brand.value,
+    n: name.value,
+    days: days,
+    status: status
+  });
+
+  name.value="";
+  date.value="";
   render();
 }
 
 function render(){
   list.innerHTML="";
-  data.forEach(x=>{
+  data.forEach((x,i)=>{
     list.innerHTML += `
       <tr>
         <td>${x.b}</td>
         <td>${x.n}</td>
         <td>${x.days}</td>
         <td class="${x.days>=365?'warn':'ok'}">${x.status}</td>
+        <td>
+          <button onclick="del(${i})">Delete</button>
+        </td>
       </tr>`;
   });
+}
+
+function del(i){
+  if(confirm("Delete karna hai?")){
+    data.splice(i,1);
+    render();
+  }
 }
 </script>
 
 </body>
-</html>v
+</html>

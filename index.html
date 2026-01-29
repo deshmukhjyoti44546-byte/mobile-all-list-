@@ -1,92 +1,68 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="UTF-8">
-<title>Mobile Tracker</title>
-
-<style>
-body{
-  font-family: Arial;
-  background:#f4f7ff;
-  margin:0;
-  padding:0;
-}
-header{
-  background:#222;
-  color:#fff;
-  padding:15px;
-  text-align:center;
-}
-.container{ padding:15px; }
-
-.card{
-  background:#fff;
-  padding:15px;
-  margin:10px 0;
-  border-radius:10px;
-  box-shadow:0 2px 6px rgba(0,0,0,0.1);
-  cursor:pointer;
-}
-
-.brand{ font-size:18px; font-weight:bold; }
-
-.green{ color:#2e7d32; }
-.yellow{ color:#f9a825; }
-.red{ color:#c62828; }
-
-button{
-  padding:8px 12px;
-  border:none;
-  border-radius:6px;
-  background:#1976d2;
-  color:#fff;
-  cursor:pointer;
-}
-button.danger{ background:#c62828; }
-
-input,select{
-  padding:7px;
-  width:100%;
-  margin:6px 0;
-}
-.hidden{ display:none; }
-</style>
+  <title>Mobile Tracker</title>
+  <style>
+    body { font-family: Arial; background:#f2f6ff; padding:20px; }
+    h2 { color:#333; }
+    button, input, select { padding:6px; margin:5px; }
+    table { border-collapse: collapse; width:100%; margin-top:15px; }
+    th, td { border:1px solid #aaa; padding:8px; text-align:center; }
+    .warn { color:red; font-weight:bold; }
+    .ok { color:green; font-weight:bold; }
+    .card {
+      background:#fff;
+      padding:12px;
+      margin:8px 0;
+      border-radius:8px;
+      box-shadow:0 2px 5px rgba(0,0,0,0.1);
+      cursor:pointer;
+    }
+    .hidden { display:none; }
+  </style>
 </head>
 
 <body>
 
-<header>📱 Mobile Tracker</header>
+<h2>📱 Mobile Tracker</h2>
 
-<div class="container">
+<!-- LOGIN -->
+<div id="loginBox">
+  <input type="password" id="pass" placeholder="Enter Password">
+  <button onclick="doLogin()">Login</button>
+</div>
 
-<!-- HOME -->
-<div id="home">
+<!-- HOME (BRANDS) -->
+<div id="homeBox" class="hidden">
   <h3>Select Brand</h3>
   <div id="brandList"></div>
-  <button onclick="openAdd()">+ Add Mobile</button>
+  <button onclick="openAdd()">+ Add New Mobile</button>
 </div>
 
 <!-- BRAND PAGE -->
-<div id="brandPage" class="hidden">
+<div id="brandBox" class="hidden">
   <button onclick="goHome()">← Back</button>
   <h3 id="brandTitle"></h3>
-  <div id="modelList"></div>
-</div>
 
-<!-- DETAIL PAGE -->
-<div id="detailPage" class="hidden">
-  <button onclick="backToBrand()">← Back</button>
-  <h3 id="detailTitle"></h3>
-  <p id="detailInfo"></p>
-  <button class="danger" onclick="deleteMobile()">Delete</button>
+  <table>
+    <thead>
+      <tr>
+        <th>Mobile</th>
+        <th>Days</th>
+        <th>Status</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody id="mobileList"></tbody>
+  </table>
 </div>
 
 <!-- ADD MOBILE -->
-<div id="addPage" class="hidden">
+<div id="addBox" class="hidden">
   <button onclick="goHome()">← Back</button>
   <h3>Add New Mobile</h3>
 
-  <select id="addBrand">
+  <select id="brand">
     <option>Samsung</option>
     <option>Apple</option>
     <option>Vivo</option>
@@ -100,114 +76,110 @@ input,select{
     <option>Nothing</option>
   </select>
 
-  <input id="addModel" placeholder="Mobile Model Name">
-  <input type="date" id="addDate">
-  <button onclick="saveMobile()">Save</button>
-</div>
-
+  <input id="name" placeholder="Mobile Name">
+  <input type="date" id="date">
+  <button onclick="addMobile()">Add</button>
 </div>
 
 <script>
-let mobiles = JSON.parse(localStorage.getItem("mobiles")) || [];
+const PASSWORD = "1234";
+let data = JSON.parse(localStorage.getItem("data")) || [];
 let currentBrand = "";
-let currentIndex = -1;
 
-const brands = ["Samsung","Apple","Vivo","Oppo","Redmi","Realme","OnePlus","Motorola","Infinix","Tecno","Nothing"];
+const brands = [
+  "Samsung","Apple","Vivo","Oppo","Redmi",
+  "Realme","OnePlus","Motorola","Infinix","Tecno","Nothing"
+];
 
-function daysBetween(date){
-  let d = new Date(date);
-  let t = new Date();
-  return Math.floor((t-d)/(1000*60*60*24));
-}
-
-function status(days){
-  if(days>=365) return {text:"OBSOLETE",cls:"red"};
-  if(days>=300) return {text:"NEAR OBSOLETE",cls:"yellow"};
-  return {text:"UP-TO-DATE",cls:"green"};
+function doLogin(){
+  if(pass.value === PASSWORD){
+    loginBox.style.display="none";
+    homeBox.classList.remove("hidden");
+    renderBrands();
+  } else {
+    alert("Wrong Password");
+  }
 }
 
 /* HOME */
 function renderBrands(){
   brandList.innerHTML="";
   brands.forEach(b=>{
-    brandList.innerHTML+=`
-      <div class="card brand" onclick="openBrand('${b}')">${b}</div>`;
+    brandList.innerHTML += `
+      <div class="card" onclick="openBrand('${b}')">${b}</div>`;
   });
 }
-renderBrands();
 
 /* BRAND PAGE */
 function openBrand(b){
-  currentBrand=b;
-  home.classList.add("hidden");
-  brandPage.classList.remove("hidden");
-  brandTitle.innerText=b;
-  modelList.innerHTML="";
-
-  mobiles.filter(m=>m.brand===b).forEach((m,i)=>{
-    let d=daysBetween(m.date);
-    let s=status(d);
-    modelList.innerHTML+=`
-      <div class="card" onclick="openDetail(${i})">
-        <b>${m.model}</b><br>
-        <span class="${s.cls}">${s.text}</span> • ${d} days
-      </div>`;
-  });
+  currentBrand = b;
+  homeBox.classList.add("hidden");
+  brandBox.classList.remove("hidden");
+  brandTitle.innerText = b;
+  renderMobiles();
 }
 
-/* DETAIL */
-function openDetail(i){
-  currentIndex=i;
-  brandPage.classList.add("hidden");
-  detailPage.classList.remove("hidden");
+function renderMobiles(){
+  mobileList.innerHTML="";
+  data
+    .filter(x=>x.brand===currentBrand)
+    .forEach((x,i)=>{
+      mobileList.innerHTML += `
+        <tr>
+          <td>${x.name}</td>
+          <td>${x.days}</td>
+          <td class="${x.days>=365?'warn':'ok'}">${x.status}</td>
+          <td><button onclick="deleteMobile(${i})">Delete</button></td>
+        </tr>`;
+    });
+}
 
-  let m=mobiles[i];
-  let d=daysBetween(m.date);
-  let s=status(d);
+/* ADD MOBILE */
+function openAdd(){
+  homeBox.classList.add("hidden");
+  addBox.classList.remove("hidden");
+}
 
-  detailTitle.innerText=m.model;
-  detailInfo.innerHTML=`
-    Brand: ${m.brand}<br>
-    Purchase Date: ${m.date}<br>
-    Days Used: ${d}<br>
-    Status: <span class="${s.cls}">${s.text}</span>
-  `;
+function addMobile(){
+  if(!name.value || !date.value){
+    alert("Name aur Date daalo");
+    return;
+  }
+
+  let d = new Date(date.value);
+  let today = new Date();
+  let days = Math.floor((today-d)/(1000*60*60*24));
+  let status = days>=365 ? "⚠️ 1 year old" : "✅ OK";
+
+  data.push({
+    brand: brand.value,
+    name: name.value,
+    days: days,
+    status: status
+  });
+
+  localStorage.setItem("data",JSON.stringify(data));
+
+  name.value="";
+  date.value="";
+  goHome();
 }
 
 /* DELETE */
-function deleteMobile(){
-  if(confirm("Delete this mobile?")){
-    mobiles.splice(currentIndex,1);
-    localStorage.setItem("mobiles",JSON.stringify(mobiles));
-    detailPage.classList.add("hidden");
-    goHome();
+function deleteMobile(i){
+  if(confirm("Delete karna hai?")){
+    data.splice(i,1);
+    localStorage.setItem("data",JSON.stringify(data));
+    renderMobiles();
   }
-}
-
-/* ADD */
-function openAdd(){
-  home.classList.add("hidden");
-  addPage.classList.remove("hidden");
-}
-function saveMobile(){
-  let b=addBrand.value;
-  let m=addModel.value;
-  let d=addDate.value;
-  if(!m||!d){ alert("Fill all fields"); return; }
-
-  mobiles.push({brand:b,model:m,date:d});
-  localStorage.setItem("mobiles",JSON.stringify(mobiles));
-  goHome();
 }
 
 /* NAV */
 function goHome(){
-  document.querySelectorAll(".hidden").forEach(e=>e.classList.add("hidden"));
-  home.classList.remove("hidden");
-}
-function backToBrand(){
-  detailPage.classList.add("hidden");
-  openBrand(currentBrand);
+  brandBox.classList.add("hidden");
+  addBox.classList.add("hidden");
+  homeBox.classList.remove("hidden");
+  renderBrands();
 }
 </script>
 
